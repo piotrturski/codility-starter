@@ -1,7 +1,13 @@
 
+import static org.apache.commons.lang3.ArrayUtils.EMPTY_STRING_ARRAY;
 import static org.assertj.core.api.StrictAssertions.assertThat;
 import static org.assertj.core.api.StrictAssertions.assertThatThrownBy;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import com.googlecode.zohhak.api.Coercion;
@@ -24,37 +30,59 @@ public class SolutionTest {
 		"1, 1",
 	})
 	public void solution_exception(String s1, String expected) {
-		assertThatThrownBy(() -> {});
+		assertThatThrownBy(() -> {throw new RuntimeException();})
+									.isInstanceOf(RuntimeException.class);
 	}
 	
-	// "123" -> [1,2,3]
+	// "1 2 -3" -> [1,2,-3]
     @Coercion
     public int[] toArray(String input) {
-    	return input.chars().map(c -> Integer.parseInt(""+((char)c))).toArray();
+    	return spaceSeparatedStream(input).mapToInt(Integer::parseInt).toArray();
     }
     
     @TestWith({
-    	"123, "
+    	"1 2 -3"
     })
-    public void toArray_should_build_an_array_of_1_digit_ints(int[] a1, int[] a2) {
-    	assertThat(a1).isEqualTo(new int[]{1, 2, 3});
-    	assertThat(a2).isEmpty();
+    public void toArray_should_build_an_array_of_ints(int[] a1) {
+    	assertThat(a1).isEqualTo(new int[]{1, 2, -3});
     }
 
-    // "abc" -> ["a", "b", "c"]
+    @TestWith({
+    	" ' ' ",
+    	""
+    })
+    public void toArray_should_build_empty_array_of_ints(int[] a1) {
+    	assertThat(a1).isEmpty();
+    }
+    
+    // "a b c" -> ["a", "b", "c"]
     @Coercion
     public String[] toArray2(String input) {
-		Object[] array = input.chars().mapToObj(c -> ""+(char)c).toArray(String[]::new);
-		String[] array2 = (String[]) array;
-		return array2;
+		return spaceSeparatedStream(input).toArray(String[]::new);
     }
     
     @TestWith({
-    	"abc, "
+    	"ad b c "
     })
-    public void toArray2_should_build_an_array_of_1_character_strings(String[] a1, String[] a2) {
-    	assertThat(a1).isEqualTo(new String[]{"a", "b", "c"});
-    	assertThat(a2).isEmpty();
+    public void toArray2_should_build_an_array_of_strings(String[] a1) {
+    	assertThat(a1).isEqualTo(new String[]{"ad", "b", "c"});
     }
-	
+
+    @TestWith({
+    	" ' ' ",
+    	""
+    })
+    public void toArray_should_build_empty_array_of_strings(String[] a1) {
+    	assertThat(a1).isEmpty();
+    }
+    
+    /**
+     * handles empty string different than String::split 
+     */
+    private Stream<String> spaceSeparatedStream(String input) {
+    	return Arrays.stream(
+    			StringUtils.isEmpty(input)? EMPTY_STRING_ARRAY : input.split(" ")
+    			);
+    }
+    
 }
